@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Development Architecture</title>
+  <style>
+    :root {
+      --bg: #eef9fb;
+      --ink: #2b2620;
+      --muted: #6f6a61;
+      --line: #d8cfc0;
+      --green: #5f7f44;
+      --teal: #1b7b82;
+      --orange: #d6721b;
+      --purple: #7245a3;
+      --mint: #4d8e70;
+      --shadow: 0 10px 24px rgba(60, 45, 20, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 32px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .poster {
+      max-width: 1180px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .brand {
+      text-align: center;
+      letter-spacing: 0.14em;
+      font-size: 18px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #27221e;
+      margin-bottom: 8px;
+    }
+
+    .brand::before {
+      content: "✳";
+      color: #d06f47;
+      margin-right: 12px;
+      font-size: 26px;
+      vertical-align: middle;
+    }
+
+    h1 {
+      margin: 0;
+      text-align: center;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(42px, 5vw, 72px);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin: 12px 0 4px;
+      text-align: center;
+      font-size: clamp(18px, 2vw, 32px);
+      font-weight: 900;
+      letter-spacing: 0.02em;
+    }
+
+    .author {
+      text-align: center;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 152px 1fr 152px;
+      gap: 22px;
+      align-items: center;
+    }
+
+    .side-card {
+      background: rgba(255, 255, 255, 0.54);
+      border: 2px solid var(--line);
+      border-radius: 18px;
+      padding: 22px 18px;
+      min-height: 370px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    .side-card h2 {
+      margin: 10px 0 16px;
+      font-size: 28px;
+      line-height: 1.03;
+      text-align: center;
+    }
+
+    .side-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto;
+      color: #d46d28;
+    }
+
+    .side-card ul {
+      padding-left: 18px;
+      margin: 0;
+      color: #6f4435;
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .layers {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .layer {
+      background: rgba(255, 255, 255, 0.7);
+      border: 2px solid var(--line);
+      border-left-width: 5px;
+      border-radius: 18px;
+      padding: 18px 18px 16px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .layer.green { border-left-color: var(--green); }
+    .layer.teal { border-left-color: var(--teal); }
+    .layer.orange { border-left-color: var(--orange); }
+    .layer.purple { border-left-color: var(--purple); }
+    .layer.mint { border-left-color: var(--mint); }
+
+    .layer-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 20px;
+      flex: 0 0 auto;
+    }
+
+    .green .badge { background: var(--green); }
+    .teal .badge { background: var(--teal); }
+    .orange .badge { background: var(--orange); }
+    .purple .badge { background: var(--purple); }
+    .mint .badge { background: var(--mint); }
+
+    .layer-title {
+      font-weight: 900;
+      font-size: 22px;
+      line-height: 1.15;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .layer-symbol {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #fff;
+      border: 1.8px solid var(--line);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+      flex: 0 0 auto;
+    }
+
+    .icon {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      display: block;
+    }
+
+    .icon.large {
+      width: 46px;
+      height: 46px;
+      stroke-width: 1.65;
+    }
+
+    .green .layer-symbol, .green .node-icon, .green .layer-name { color: var(--green); }
+    .teal .layer-symbol, .teal .node-icon, .teal .layer-name { color: var(--teal); }
+    .orange .layer-symbol, .orange .node-icon, .orange .layer-name { color: var(--orange); }
+    .purple .layer-symbol, .purple .node-icon, .purple .layer-name { color: var(--purple); }
+    .mint .layer-symbol, .mint .node-icon, .mint .layer-name { color: var(--mint); }
+
+    .layer-role {
+      margin-left: auto;
+      font-size: 18px;
+      font-weight: 800;
+      opacity: 0.9;
+    }
+
+    .green .layer-role { color: var(--green); }
+    .teal .layer-role { color: var(--teal); }
+    .orange .layer-role { color: var(--orange); }
+    .purple .layer-role { color: var(--purple); }
+    .mint .layer-role { color: var(--mint); }
+
+    .layer-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1.55fr 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .layer-grid.two {
+      grid-template-columns: 1.15fr 1.9fr 1.05fr;
+    }
+
+    .node, .note, .pill, .resource {
+      border: 1.8px solid var(--line);
+      border-radius: 12px;
+      background: #fffaf3;
+      padding: 10px 12px;
+    }
+
+    .node {
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .node-icon {
+      width: 48px;
+      height: 48px;
+      flex: 0 0 auto;
+    }
+
+    .flow-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .arrow::after {
+      content: "→";
+      color: #3b352f;
+      font-weight: 900;
+      font-size: 22px;
+    }
+
+    .pill {
+      background: #fffdf8;
+      font-size: 14px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    .resource-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .resource {
+      background: #f8fbf7;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .resource::before {
+      content: "▧";
+      margin-right: 8px;
+      color: var(--teal);
+    }
+
+    .note {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      font-size: 15px;
+      color: #4a4038;
+      line-height: 1.35;
+    }
+
+    .note strong {
+      display: block;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+
+    .mini-note {
+      margin-top: 10px;
+      border: 1.5px solid var(--line);
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #4c5f6b;
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .hook-events {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .hook-events .pill {
+      flex: 0 0 auto;
+      color: #7d4c1d;
+      background: #fff8ef;
+    }
+
+    .command-flow {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .command-flow .pill {
+      flex: 1 1 145px;
+      text-align: center;
+    }
+
+    .caption-flow {
+      margin-top: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: center;
+      color: #5d4b3e;
+    }
+
+    .subagent-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.8fr 1.05fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .delegate {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .agent-visual {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2px solid var(--purple);
+      color: var(--purple);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fbf6ff;
+    }
+
+    .delegate-text {
+      font-size: 13px;
+      font-weight: 800;
+      color: #554064;
+      line-height: 1.55;
+    }
+
+    .agent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .agent-item {
+      border: 1.8px solid #d8cce3;
+      background: #fffaff;
+      border-radius: 13px;
+      padding: 9px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .agent-name {
+      font-weight: 900;
+      color: var(--purple);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .agent-name::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border: 2px solid var(--purple);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .agent-details {
+      margin: 0;
+      padding-left: 16px;
+      font-size: 12px;
+      color: #4f4058;
+      line-height: 1.18;
+    }
+
+    .plugin-path {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .folder-list {
+      min-width: 170px;
+      border: 1.8px solid var(--line);
+      border-radius: 12px;
+      background: #fafff9;
+      padding: 10px 14px;
+      font-weight: 750;
+      line-height: 1.6;
+      color: #41634f;
+    }
+
+    .market {
+      min-width: 130px;
+      text-align: center;
+      font-weight: 900;
+      color: #476c51;
+    }
+
+    .legend {
+      margin: 24px auto 0;
+      border: 2px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.62);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 16px 18px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 13px;
+      font-weight: 850;
+      color: #554d45;
+    }
+
+    .legend-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      border: 1.8px solid currentColor;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fffdf8;
+    }
+
+    .legend-arrow {
+      color: #75685d;
+      font-weight: 900;
+    }
+
+    @media (max-width: 980px) {
+      body { padding: 18px; }
+      .layout { grid-template-columns: 1fr; }
+      .side-card { min-height: auto; }
+      .layer-grid, .layer-grid.two, .subagent-grid { grid-template-columns: 1fr; }
+      .layer-role { width: 100%; margin-left: 46px; }
+      .agent-item { grid-template-columns: 1fr; }
+      .plugin-path { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <main class="poster" aria-label="The Agent Development Kit diagram">
+    <h1>Agent Development Architecture</h1>
+	<br><br>
+    <div class="subtitle">Instructions.md + Skills + Hooks + Subagents + Plugins</div>
+
+    <section class="layout">
+      <aside class="side-card">
+        <svg class="side-icon icon large" viewBox="0 0 48 48" aria-hidden="true">
+          <circle cx="24" cy="24" r="5" />
+          <circle cx="10" cy="12" r="4" />
+          <circle cx="38" cy="12" r="4" />
+          <circle cx="10" cy="36" r="4" />
+          <circle cx="38" cy="36" r="4" />
+          <path d="M20 21 13 15M28 21l7-6M20 27l-7 6M28 27l7 6" />
+        </svg>
+        <h2>MCP<br />Servers</h2>
+        <ul>
+          <li>external tools</li>
+          <li>GitHub</li>
+          <li>databases</li>
+          <li>APIs</li>
+          <li>custom integrations</li>
+        </ul>
+      </aside>
+
+      <section class="layers">
+        <article class="layer green">
+          <header class="layer-header">
+            <span class="badge">1</span>
+            <div class="layer-title">
+              <span class="layer-symbol">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z" /><path d="M14 3v5h5" /><path d="M9.5 12h5M9.5 16h5" /></svg>
+              </span>
+              <span>Layer 1 — <span class="layer-name">Instructions.md</span></span>
+            </div>
+            <div class="layer-role">The Memory Layer</div>
+          </header>
+
+          <div class="layer-grid">
+            <div class="node">
+              <span class="node-icon">
+                <svg class="icon large" viewBox="0 0 48 48" aria-hidden="true"><path d="M14 6h15l7 7v29H14z" /><path d="M29 6v8h8" /><path d="M19 21h14M19 27h14M19 33h10" /></svg>
+              </span>
+              <span>Instruction.md</span>
+            </div>
+            <div class="flow-list">
+              <div class="flow-row"><span class="arrow"></span><span class="pill">architecture rules</span></div>
+              <div class="flow-row"><span class="arrow"></span><span class="pill">naming conventions</span></div>
+              <div class="flow-row"><span class="arrow"></span><span class="pill">test expectations</span></div>
+              <div class="flow-row"><span class="arrow"></span><span class="pill">repo map</span></div>
+            </div>
+            <div class="note">
+              <strong>Always loaded. Always active.</strong>
+              This is the agent's constitution.
+              <br /><br />
+              <strong>~/.agent/copilot-instructions.md</strong>
+              Global
+            </div>
+          </div>
+        </article>
+
+        <article class="layer teal">
+          <header class="layer-header">
+            <span class="badge">2</span>
+            <div class="layer-title">
+              <span class="layer-symbol">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H11v16H6.5A2.5 2.5 0 0 0 4 22z" /><path d="M20 6.5A2.5 2.5 0 0 0 17.5 4H13v16h4.5A2.5 2.5 0 0 1 20 22z" /><path d="M8 8h1M15 8h1" /></svg>
+              </span>
+              <span>Layer 2 — <span class="layer-name">SKILLS</span></span>
+            </div>
+            <div class="layer-role">The Knowledge Layer</div>
+          </header>
+
+          <div class="layer-grid two">
+            <div class="node">
+              <span class="node-icon">
+                <svg class="icon large" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 13a5 5 0 0 1 5-5h11v31H13a5 5 0 0 0-5 5z" /><path d="M40 13a5 5 0 0 0-5-5H24v31h11a5 5 0 0 1 5 5z" /><path d="M14 17h5M29 17h5M14 23h5M29 23h5" /></svg>
+              </span>
+              <span>SKILL.md</span>
+            </div>
+            <div>
+              <div class="command-flow">
+                <span class="pill">description matching</span>
+                <span class="arrow"></span>
+                <span class="pill">auto-invoked</span>
+                <span class="arrow"></span>
+                <span class="pill">task-specific context</span>
+              </div>
+              <div class="mini-note">On-demand, not always-on. Modular context chunks.</div>
+            </div>
+            <div class="resource-list">
+              <div class="resource">reference docs</div>
+              <div class="resource">scripts</div>
+              <div class="resource">templates</div>
+              <div class="mini-note"><strong>Key:</strong> context fork runs skill in isolated subagent</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="layer orange">
+          <header class="layer-header">
+            <span class="badge">3</span>
+            <div class="layer-title">
+              <span class="layer-symbol">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v6" /><path d="M7 7l4 4" /><path d="M17 7l-4 4" /><path d="M5 14h14" /><path d="M8 20h8" /><path d="M10 14v6M14 14v6" /></svg>
+              </span>
+              <span>Layer 3 — <span class="layer-name">HOOKS</span></span>
+            </div>
+            <div class="layer-role">The Guardrail Layer</div>
+          </header>
+
+          <div class="layer-grid two">
+            <div style="grid-column: span 2;">
+              <div class="hook-events">
+                <span class="pill">PreToolUse</span>
+                <span class="pill">PostToolUse</span>
+                <span class="pill">SessionStart</span>
+                <span class="pill">Stop</span>
+                <span class="pill">SubagentStop</span>
+              </div>
+              <div class="command-flow">
+                <span class="pill">auto-lint on Write</span>
+                <span class="arrow"></span>
+                <span class="pill">block rm -rf</span>
+                <span class="arrow"></span>
+                <span class="pill">Slack notification on Stop</span>
+              </div>
+              <div class="caption-flow">Event fires → Matcher checks → Command runs</div>
+            </div>
+            <div class="note">
+              <strong>Deterministic. Not AI.</strong>
+              Think Git hooks for your agent.
+            </div>
+          </div>
+        </article>
+
+        <article class="layer purple">
+          <header class="layer-header">
+            <span class="badge">4</span>
+            <div class="layer-title">
+              <span class="layer-symbol">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3" /><path d="M6 20a6 6 0 0 1 12 0" /><circle cx="5" cy="11" r="2" /><circle cx="19" cy="11" r="2" /></svg>
+              </span>
+              <span>Layer 4 — <span class="layer-name">SUBAGENTS</span></span>
+            </div>
+            <div class="layer-role">The Delegation Layer</div>
+          </header>
+
+          <div class="subagent-grid">
+            <div class="delegate">
+              <div class="agent-visual">
+                <svg class="icon large" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="15" r="6" /><path d="M13 40a11 11 0 0 1 22 0" /><circle cx="10" cy="23" r="4" /><circle cx="38" cy="23" r="4" /><path d="M14 28a7 7 0 0 0-9 7M34 28a7 7 0 0 1 9 7" /></svg>
+              </div>
+              <div class="delegate-text">delegate only →<br /><br />← results only</div>
+            </div>
+            <div class="agent-list">
+              <div class="agent-item">
+                <div class="agent-name">code-reviewer</div>
+                <ul class="agent-details">
+                  <li>own context window</li>
+                  <li>custom model</li>
+                  <li>custom tools</li>
+                  <li>custom permissions</li>
+                </ul>
+              </div>
+              <div class="agent-item">
+                <div class="agent-name">test-runner</div>
+                <ul class="agent-details">
+                  <li>own context window</li>
+                  <li>custom model</li>
+                  <li>custom tools</li>
+                  <li>custom permissions</li>
+                </ul>
+              </div>
+              <div class="agent-item">
+                <div class="agent-name">explorer</div>
+                <ul class="agent-details">
+                  <li>own context window</li>
+                  <li>custom model</li>
+                  <li>custom tools</li>
+                  <li>custom permissions</li>
+                </ul>
+              </div>
+            </div>
+            <div class="note">
+              <strong>Keeps main context clean.</strong>
+              No infinite recursion — subagents can't spawn subagents.
+            </div>
+          </div>
+        </article>
+
+        <article class="layer mint">
+          <header class="layer-header">
+            <span class="badge">5</span>
+            <div class="layer-title">
+              <span class="layer-symbol">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v10l8 4 8-4V7z" /><path d="M4 7l8 4 8-4" /><path d="M12 11v10" /></svg>
+              </span>
+              <span>Layer 5 — <span class="layer-name">PLUGINS</span></span>
+            </div>
+            <div class="layer-role">The Distribution Layer</div>
+          </header>
+
+          <div class="layer-grid two">
+            <div class="node">
+              <span class="node-icon">
+                <svg class="icon large" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 5 8 13v22l16 8 16-8V13z" /><path d="M8 13l16 8 16-8" /><path d="M24 21v22" /><path d="M16 9l16 8" /></svg>
+              </span>
+              <span>Plugin<br />Package</span>
+            </div>
+            <div class="plugin-path">
+              <div class="folder-list">
+                ▸ skills/<br />
+                ▸ agents/<br />
+                ▸ hooks/<br />
+                ▸ commands/
+              </div>
+              <span class="arrow"></span>
+              <div class="market">Marketplace /<br />Team install</div>
+            </div>
+            <div class="note">
+              <strong>Think npm packages</strong>
+              for agent capabilities.
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <aside class="side-card">
+        <svg class="side-icon icon large" viewBox="0 0 48 48" aria-hidden="true">
+          <circle cx="24" cy="14" r="6" />
+          <path d="M12 42a12 12 0 0 1 24 0" />
+          <circle cx="9" cy="23" r="4" />
+          <circle cx="39" cy="23" r="4" />
+          <path d="M15 31a9 9 0 0 0-10 8M33 31a9 9 0 0 1 10 8" />
+        </svg>
+        <h2>Agent<br />Teams</h2>
+        <ul>
+          <li>parallel execution</li>
+          <li>message passing</li>
+          <li>lead orchestration</li>
+          <li>shared permissions</li>
+        </ul>
+      </aside>
+    </section>
+
+    <footer class="legend">
+      <div class="legend-item"><span class="legend-icon" style="color:#5f7f44;"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z" /><path d="M14 3v5h5" /><path d="M9.5 12h5M9.5 16h5" /></svg></span>Instruction.md sets rules</div>
+      <span class="legend-arrow">→</span>
+      <div class="legend-item"><span class="legend-icon" style="color:#22828b;"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H11v16H6.5A2.5 2.5 0 0 0 4 22z" /><path d="M20 6.5A2.5 2.5 0 0 0 17.5 4H13v16h4.5A2.5 2.5 0 0 1 20 22z" /></svg></span>Skills provide expertise</div>
+      <span class="legend-arrow">→</span>
+      <div class="legend-item"><span class="legend-icon" style="color:#d37220;"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v6" /><path d="M7 7l4 4" /><path d="M17 7l-4 4" /><path d="M5 14h14" /><path d="M8 20h8" /></svg></span>Hooks enforce quality</div>
+      <span class="legend-arrow">→</span>
+      <div class="legend-item"><span class="legend-icon" style="color:#7445a4;"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3" /><path d="M6 20a6 6 0 0 1 12 0" /><circle cx="5" cy="11" r="2" /><circle cx="19" cy="11" r="2" /></svg></span>Subagents delegate work</div>
+      <span class="legend-arrow">→</span>
+      <div class="legend-item"><span class="legend-icon" style="color:#4e8e70;"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v10l8 4 8-4V7z" /><path d="M4 7l8 4 8-4" /><path d="M12 11v10" /></svg></span>Plugins distribute to team</div>
+    </footer>
+  </main>
+</body>
+</html>
